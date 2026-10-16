@@ -2,7 +2,7 @@
 
 Isaac Lab training pipeline for ANYmal-D, built on our own USD (converted from
 `anymal_d_simple_description`'s URDF) and the real ANYdrive 3.6 actuator net (not Isaac Lab's
-generic one). Two gym tasks live here:
+generic one). Two training rutines:
 
 1. **Flat-terrain velocity tracking** (`anymal_d_custom_task.py`) — the base layer: follow a
    random velocity command on flat ground. Everything else is built on top of this by
@@ -110,7 +110,7 @@ anything structurally — the `RewardManager` just stops calling it — but noth
 architecture flags that the removed term was covering a real need (teaching proper foot
 lift-off) that now has no replacement. See Known gotchas.
 
-## Known gotchas
+## Fundamental Bases
 
 **Environment / conversion pipeline:**
 - `--merge-joints` is mandatory in `convert_urdf.py`. Without it, every fixed joint in the
@@ -136,17 +136,8 @@ lift-off) that now has no replacement. See Known gotchas.
 - `VisualizationMarkers` draws nothing just because `debug_vis=True` is set in the cfg — a
   `CommandTerm` subclass needs its own `_set_debug_vis_impl`/`_debug_vis_callback` hooks
   (mirrored from `ObjectUniformPoseCommand`).
-- See [ADR-0001](docs/decisions/0001-goal-success-region-must-not-exceed-platform-footprint.md)
-  for the two geometric exploits found in the success condition (and why the fix is an
-  invariant on `BOX_FOOTPRINT`/`goal_xy_jitter`/`success_radius`, not a one-off number tweak).
 
 ## Status
-
-Both success-condition exploits in ADR-0001 are fixed. The "honest" success rate measured
-after both fixes is low (mostly 0-1%, briefly touching ~1%) — expected, since most of the
-previously-apparent ~14% peak was the exploits, not real climbing skill — so
-`success_rate_threshold` in `PlatformHeightCurriculum` still needs recalibrating against this
-lower baseline.
 
 Currently under investigation: the robot climbs up but drags its body across the platform
 instead of stepping cleanly. Leading hypothesis: `rewards.feet_air_time` — the term that, in
