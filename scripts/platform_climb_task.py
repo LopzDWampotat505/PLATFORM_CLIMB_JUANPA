@@ -143,8 +143,15 @@ class AnymalDPlatformClimbEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
             # register as a success. Loosened from 0.3/0.1 so the success condition is reachable
             # without weakening what it actually requires: goal_xy_jitter is still 0.7, so the
             # robot still has to walk to a specific area of the platform, not just arrive anywhere.
+            # success_radius stays loose at 0.5 (the ADR-0001 margin invariant - box_half_footprint
+            # (1.3) - goal_xy_jitter (0.7) = 0.6 >= success_radius - already holds here with room
+            # to spare, so there's no geometric reason to tighten it). success_height_tol tightened
+            # 0.15 -> 0.05 instead: a dragging/crawling gait keeps the base BELOW nominal standing
+            # height, so a tight height check is what actually distinguishes "standing on the
+            # platform" from "sprawled across it" - loosening XY would reopen the edge-lean exploit
+            # ADR-0001 closed, tightening Z doesn't touch that at all.
             success_radius=0.5,
-            success_height_tol=0.15,
+            success_height_tol=0.05,
             resampling_time_range=(1.0e9, 1.0e9),
             debug_vis=True,
         )

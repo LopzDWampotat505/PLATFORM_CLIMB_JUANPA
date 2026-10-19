@@ -203,12 +203,20 @@ class PlatformGoalCommandCfg(CommandTermCfg):
     base height even when the robot is standing perfectly on the platform, and the success
     check would never pass."""
 
-    success_radius: float = 0.2 #changed from 0.3 to 0.2 on 19-10-2026
-    """Horizontal distance (m) from the goal within which the robot counts as "there"."""
+    success_radius: float = 0.5
+    """Horizontal distance (m) from the goal within which the robot counts as "there".
 
-    success_height_tol: float = 0.05 #changed from 0.1 to 0.05 on 19-10-2026
+    Always passed explicitly by platform_climb_task.py's PlatformGoalCommandCfg(...) call, which
+    is the actual source of truth - this default is only a fallback for other callers. Keep it in
+    sync with that override's inline reasoning (the ADR-0001 margin invariant) rather than editing
+    it alone: it was bumped down to 0.2 once without touching the override, which stayed at 0.5
+    and silently kept using the old value."""
+
+    success_height_tol: float = 0.05
     """Max base-height difference (m) from the goal height still counted as "there" (so the
-    robot must actually be standing at platform height, not just nearby on the ground)."""
+    robot must actually be standing at platform height, not just nearby on the ground).
+
+    Same caveat as success_radius above: platform_climb_task.py's call always overrides this."""
 
     goal_marker_cfg: VisualizationMarkersCfg = GOAL_MARKER_CFG
     """Marker shown at the goal point when debug_vis=True - red while unreached, green once
