@@ -17,6 +17,18 @@ touching `stability_task.py`, since neither EventTerm passes `range_scale` expli
 conservative than the 0.3 first discussed. Need a fresh training run to see whether this is
 enough for episodes to start surviving past a few seconds.
 
+Bucketed CSV data that triggered this (100-iteration buckets, full 2000-iteration run):
+
+```
+step   base_contact   time_out   mean_episode_length
+   0        0.9814      0.0007                 12.52
+ 100        1.0000      0.0000                  6.40
+ 500        1.0000      0.0000                  6.20
+1000        1.0000      0.0000                  6.13
+1500        1.0000      0.0000                  6.11
+1900        1.0000      0.0000                  6.09
+```
+
 ## 2026-10-19 16:17 -03 — fixed gripper sensor prim path (second run crashed)
 Second `print_body_names.py` run crashed at env creation: `ContactSensor` at
 `.../Robot/base_link` found no body with the contact reporter API. Wrong assumption in stage
