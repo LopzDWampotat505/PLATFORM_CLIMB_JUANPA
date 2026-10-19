@@ -32,7 +32,7 @@ def randomize_arm_pose(
     env: ManagerBasedRLEnv,
     env_ids: Sequence[int],
     asset_cfg: SceneEntityCfg,
-    range_scale: float = 1.0,
+    range_scale: float = 0.2,
 ) -> None:
     """Sample a new random joint-position target within each joint's own soft limits (scaled
     toward its center by `range_scale`) and hold it there via the joints' existing PD actuators.

@@ -3,6 +3,20 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-19 18:05 -03 — randomize_arm_pose's range_scale default: 1.0 -> 0.2
+First full 2000-iteration training run came back with `Episode_Termination/base_contact`
+pinned at ~100% (and `time_out` at 0%) for essentially the entire run, `Train_mean_episode_length`
+flat at ~6.1-6.4s from iteration ~100 onward with no improvement - the robot falls almost every
+episode, the whole run, never learning to survive a disturbance. Matches what the user saw in
+the recorded video (episode ending right as the arm reaches its random target). Root cause:
+`range_scale=1.0` samples the arm's target across its FULL joint range every reset/interval -
+too violent for an untrained policy to ever experience surviving one, so there was no gradient
+signal toward that skill. User lowered the default to 0.2 directly in
+`randomize_arm_pose`'s signature (affects both `arm_pose_reset` and `arm_pose_interval` without
+touching `stability_task.py`, since neither EventTerm passes `range_scale` explicitly) - more
+conservative than the 0.3 first discussed. Need a fresh training run to see whether this is
+enough for episodes to start surviving past a few seconds.
+
 ## 2026-10-19 16:17 -03 — fixed gripper sensor prim path (second run crashed)
 Second `print_body_names.py` run crashed at env creation: `ContactSensor` at
 `.../Robot/base_link` found no body with the contact reporter API. Wrong assumption in stage
