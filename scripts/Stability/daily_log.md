@@ -3,6 +3,18 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-19 16:17 -03 — fixed gripper sensor prim path (second run crashed)
+Second `print_body_names.py` run crashed at env creation: `ContactSensor` at
+`.../Robot/base_link` found no body with the contact reporter API. Wrong assumption in stage
+2's sensor loop - the Robotiq 2F-85 gripper is a separate sub-assembly nested under
+`robotiq_2f85/`, not flat under `Robot/` like the `dynaarm_*` bodies (confirmed by
+CUBOS_JUANPA's own `env_brazo.py`, whose `FrameTransformerCfg` target is
+`"Robot/robotiq_2f85/base_link"` - should have checked that the first time instead of
+assuming a flat hierarchy for every body). The 3 `dynaarm_*` sensors did NOT error, so those
+really are flat. Replaced `ARM_CONTACT_BODY_NAMES` (a flat list) with
+`ARM_CONTACT_BODY_SUBPATHS` (name -> path relative to `Robot/`) so each sensor gets its own
+correct path; `base_link` now resolves to `Robot/robotiq_2f85/base_link`, the rest unchanged.
+
 ## 2026-10-19 16:12 -03 — first real run: body names confirmed, stage 2 wired, input_idx fixed
 First `print_body_names.py` run on the VM. Resolved:
 - **Body names confirmed**: `dynaarm_SHOULDER`, `dynaarm_UPPERARM`, `dynaarm_ELBOW`,

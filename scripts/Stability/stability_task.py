@@ -58,7 +58,20 @@ from anymal_d_dynaarm import ANYMAL_D_DYNAARM_CFG, ARM_JOINT_NAMES  # noqa: E402
 # (see the loop below) - same filter_prim_paths_expr constraint as platform_climb_task.py's
 # shank/box sensors: filtered reporting only works when the sensor's own prim_path matches a
 # single primitive per environment.
-ARM_CONTACT_BODY_NAMES = ["dynaarm_FOREARM", "dynaarm_WRIST_1", "dynaarm_WRIST_2_base", "base_link"]
+#
+# Maps body name -> prim path RELATIVE TO "Robot/", not just the body name: the Robotiq 2F-85
+# gripper is a separate sub-assembly nested under "robotiq_2f85/" (confirmed by CUBOS_JUANPA's
+# own env_brazo.py FrameTransformerCfg target, "Robot/robotiq_2f85/base_link"), unlike the
+# dynaarm_* bodies, which sit flat under "Robot/" same as the legs. Learned this the hard way:
+# the first print_body_names.py run errored on exactly this ("base_link" with no
+# "robotiq_2f85/" prefix resolved to nothing with a contact reporter).
+ARM_CONTACT_BODY_SUBPATHS = {
+    "dynaarm_FOREARM": "dynaarm_FOREARM",
+    "dynaarm_WRIST_1": "dynaarm_WRIST_1",
+    "dynaarm_WRIST_2_base": "dynaarm_WRIST_2_base",
+    "base_link": "robotiq_2f85/base_link",
+}
+ARM_CONTACT_BODY_NAMES = list(ARM_CONTACT_BODY_SUBPATHS.keys())
 LEG_CONTACT_BODY_NAMES = [
     "LF_THIGH", "LH_THIGH", "RF_THIGH", "RH_THIGH",
     "LF_SHANK", "LH_SHANK", "RF_SHANK", "RH_SHANK",
@@ -104,12 +117,12 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
         # shank/box sensors.
         # ---------------------------------------------------------------
         leg_prim_paths = [f"{{ENV_REGEX_NS}}/Robot/{name}" for name in LEG_CONTACT_BODY_NAMES]
-        for arm_body in ARM_CONTACT_BODY_NAMES:
+        for arm_body, subpath in ARM_CONTACT_BODY_SUBPATHS.items():
             setattr(
                 self.scene,
                 f"{arm_body.lower()}_leg_contact",
                 ContactSensorCfg(
-                    prim_path=f"{{ENV_REGEX_NS}}/Robot/{arm_body}",
+                    prim_path=f"{{ENV_REGEX_NS}}/Robot/{subpath}",
                     filter_prim_paths_expr=leg_prim_paths,
                 ),
             )
