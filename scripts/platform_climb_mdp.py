@@ -38,6 +38,7 @@ import isaaclab.sim as sim_utils
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import CommandTerm, CommandTermCfg, ManagerTermBase, SceneEntityCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
+from isaaclab.sensors import ContactSensor
 from isaaclab.utils import configclass
 from isaaclab.utils.math import subtract_frame_transforms
 
@@ -202,10 +203,10 @@ class PlatformGoalCommandCfg(CommandTermCfg):
     base height even when the robot is standing perfectly on the platform, and the success
     check would never pass."""
 
-    success_radius: float = 0.3
+    success_radius: float = 0.2 #changed from 0.3 to 0.2 on 19-10-2026
     """Horizontal distance (m) from the goal within which the robot counts as "there"."""
 
-    success_height_tol: float = 0.1
+    success_height_tol: float = 0.05 #changed from 0.1 to 0.05 on 19-10-2026
     """Max base-height difference (m) from the goal height still counted as "there" (so the
     robot must actually be standing at platform height, not just nearby on the ground)."""
 
@@ -252,6 +253,25 @@ def velocity_toward_goal(
     goal_dir_unit = goal_dir_b / goal_dist.unsqueeze(-1)
     vel_toward_goal = torch.sum(term.robot.data.root_lin_vel_b[:, :2] * goal_dir_unit, dim=-1)
     return vel_toward_goal.clamp(max=max_speed)
+
+
+def feet_air_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
+    """Reward long steps - same mechanism as the official isaaclab_tasks' locomotion/velocity
+    mdp.feet_air_time (verified against its real source: .../velocity/mdp/rewards.py), minus its
+    zero-command gate. That gate exists there to not punish standing still when the velocity
+    command asks for it; this task has no velocity command to check against, and the robot can
+    never spawn already at platform height, so there's no legitimate "supposed to stand still"
+    state here to protect - it should always be stepping until it reaches the goal.
+
+    Dropping this term entirely (rather than just dropping its gate) when the task moved off
+    `base_velocity` is the leading hypothesis for the drag-instead-of-step gait seen in play.py
+    videos: nothing else in this task's rewards cares whether a foot actually left the ground
+    between steps.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    first_contact = contact_sensor.compute_first_contact(env.step_dt)[:, sensor_cfg.body_ids]
+    last_air_time = contact_sensor.data.last_air_time[:, sensor_cfg.body_ids]
+    return torch.sum((last_air_time - threshold) * first_contact, dim=1)
 
 
 def foot_on_platform_bonus(

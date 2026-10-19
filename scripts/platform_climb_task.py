@@ -19,8 +19,10 @@ pieces' implementation):
   - observations.policy.velocity_commands -> replaced by goal_position (same slot, points at
     the new command).
   - rewards.track_lin_vel_xy_exp / track_ang_vel_z_exp -> removed (nothing to track anymore).
-  - rewards.feet_air_time -> removed (its command_name="base_velocity" param would otherwise
-    KeyError once that command is gone).
+  - rewards.feet_air_time -> reimplemented in platform_climb_mdp.py without the
+    command_name="base_velocity" gate (that command is gone; nothing here is ever "supposed to
+    stand still" anyway) - same func-dropped-entirely mistake made it through once already and
+    is the leading hypothesis for the drag-instead-of-step gait under investigation.
   - rewards.progress_to_goal / reached_goal_bonus -> added (potential-based distance reward +
     one-off success bonus).
   - terminations.goal_reached -> added (episode ends in success once on the platform).
@@ -171,7 +173,17 @@ class AnymalDPlatformClimbEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
         # ---------------------------------------------------------------
         self.rewards.track_lin_vel_xy_exp = None
         self.rewards.track_ang_vel_z_exp = None
-        self.rewards.feet_air_time = None  # referenced command_name="base_velocity", now gone
+        self.rewards.feet_air_time = RewTerm(
+            func=platform_climb_mdp.feet_air_time,
+            # Same weight/threshold AnymalDFlatEnvCfg uses (velocity_env_cfg.py:249/253) -
+            # verified against the real source rather than re-guessed. Only the func changed
+            # (drops the base_velocity gate - see platform_climb_mdp.feet_air_time's docstring).
+            weight=0.125,
+            params={
+                "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*SHANK"),
+                "threshold": 0.5,
+            },
+        )
         self.rewards.velocity_toward_goal = RewTerm(
             func=platform_climb_mdp.velocity_toward_goal, weight=1.5, params={"command_name": "goal_position"}
         )
