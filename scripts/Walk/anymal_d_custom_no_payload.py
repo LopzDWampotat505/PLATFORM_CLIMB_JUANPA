@@ -26,6 +26,12 @@ ACTUATOR_NET_PATH = f"{ASSETS_DIR}/actuator_net/anydrive_3_6_mlp_jit.pt"
 # -----------------------------------------------------------------------------
 # Actuator - real ANYdrive 3.6 MLP actuator net (converted from anydrive_3_6_20210303.txt)
 # -----------------------------------------------------------------------------
+# input_idx=[0, 2, 4]: see anymal_d_custom.py's identical actuator cfg for the full
+# explanation - confirmed via print_body_names.py (2026-10-19) that this task's real
+# sim.dt is 0.005s, so [0,1,2] (0/0.005s/0.01s) didn't match the real actuator's
+# training lags (0/0.01s/0.02s) the way [0,2,4] does. Same fix as CUBOS_JUANPA's
+# anymal_completo_cfg. Also fixes Climb (platform_climb_task.py inherits this file's
+# robot unchanged).
 ANYDRIVE_3_6_MLP_ACTUATOR_CFG_NO_PAYLOAD = ActuatorNetMLPCfg(
     joint_names_expr=[".*HAA", ".*HFE", ".*KFE"],
     network_file=ACTUATOR_NET_PATH,
@@ -33,7 +39,7 @@ ANYDRIVE_3_6_MLP_ACTUATOR_CFG_NO_PAYLOAD = ActuatorNetMLPCfg(
     vel_scale=0.2,
     torque_scale=60.0,
     input_order="vel_pos",
-    input_idx=[0, 1, 2],
+    input_idx=[0, 2, 4],
     saturation_effort=120.0,
     effort_limit=80.0,
     velocity_limit=7.5,

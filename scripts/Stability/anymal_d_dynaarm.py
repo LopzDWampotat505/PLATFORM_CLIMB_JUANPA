@@ -46,10 +46,9 @@ GRIPPER_PASSIVE_JOINT_NAMES = [
 
 # -----------------------------------------------------------------------------
 # Actuator - real ANYdrive 3.6 MLP actuator net, same file/scales as anymal_d_custom.py.
-# input_idx kept at [0, 1, 2] to match what Walk/Climb already use - CUBOS uses [0, 2, 4]
-# with its own sim.dt=0.005. OPEN ITEM (see scripts/Stability/daily_log.md): confirm our
-# actual inherited sim.dt before trusting either choice - affects Walk/Climb too, not just
-# this file. Not changed here without that verification.
+# input_idx=[0, 2, 4]: confirmed via print_body_names.py (2026-10-19) that this task's
+# real sim.dt is 0.005s, matching CUBOS_JUANPA's own anymal_completo_cfg - same fix
+# applied to anymal_d_custom.py/anymal_d_custom_no_payload.py (Walk/Climb).
 # -----------------------------------------------------------------------------
 ANYDRIVE_3_6_MLP_ACTUATOR_CFG = ActuatorNetMLPCfg(
     joint_names_expr=LEG_JOINT_NAMES,
@@ -58,7 +57,7 @@ ANYDRIVE_3_6_MLP_ACTUATOR_CFG = ActuatorNetMLPCfg(
     vel_scale=0.2,
     torque_scale=60.0,
     input_order="vel_pos",
-    input_idx=[0, 1, 2],
+    input_idx=[0, 2, 4],
     saturation_effort=120.0,
     effort_limit=80.0,
     velocity_limit=7.5,

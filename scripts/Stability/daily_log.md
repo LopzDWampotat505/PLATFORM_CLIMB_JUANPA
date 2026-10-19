@@ -3,6 +3,33 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-19 16:12 -03 — first real run: body names confirmed, stage 2 wired, input_idx fixed
+First `print_body_names.py` run on the VM. Resolved:
+- **Body names confirmed**: `dynaarm_SHOULDER`, `dynaarm_UPPERARM`, `dynaarm_ELBOW`,
+  `dynaarm_FOREARM`, `dynaarm_WRIST_1`, `dynaarm_WRIST_2_base` (arm) + `base_link` and 7
+  knuckle/finger bodies (gripper) - clean names, no guessing needed after all.
+- **Stage 2 wired** in `stability_task.py`: one `ContactSensorCfg` per body in
+  `ARM_CONTACT_BODY_NAMES = [dynaarm_FOREARM, dynaarm_WRIST_1, dynaarm_WRIST_2_base,
+  base_link]` (the end-effector chain, not the shoulder/upper-arm segments closer to the
+  body), each filtered against all 8 THIGH/SHANK leg bodies, feeding
+  `self.rewards.arm_leg_contact_penalty` (weight -1.0, a starting guess - same order of
+  magnitude as the inherited `undesired_contacts`, not yet tuned against real data).
+- **`sim.dt` confirmed as 0.005s** (from the run's own startup log) - fixed
+  `ActuatorNetMLPCfg.input_idx` here to `[0, 2, 4]` (was `[0, 1, 2]`), same fix applied to
+  Walk/Climb's actuator cfg - see `scripts/Walk/daily_log.md` for the full explanation.
+- **`joint_pos`/`joint_vel` observations confirmed unfiltered** (76-dim obs group, `joint_pos`/
+  `joint_vel` each shape (26,) = all 26 actuated joints, legs+arm+gripper) - the legs policy
+  already observes the arm's current state proprioceptively, for free, no extra wiring needed.
+  Closes open item 4 from the previous entry.
+
+**Still open** - the self-collision spawn-stability question isn't resolved yet: the first
+5-step check showed root linear velocity growing monotonically (0.08 -> 0.67 m/s over 100ms),
+ambiguous between real self-collision overlap pressure vs. the arm's own disturbance event
+swinging hard toward a random target right at reset and reacting through the free-floating
+base. Extended `print_body_names.py` to run 60 steps and print root height/velocity/
+projected_gravity_b/max arm-vs-leg contact force every 5 steps, to tell the two apart - rerun
+needed.
+
 ## 2026-10-19 16:06 -03 — fixed print_body_names.py's usage example
 Docstring said `./isaaclab.sh -p scripts/Stability/print_body_names.py ...` - wrong, that path
 doesn't exist inside `~/IsaacLab` (the user hit exactly this running it). Fixed to

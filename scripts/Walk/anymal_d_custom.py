@@ -31,9 +31,14 @@ ACTUATOR_NET_PATH = f"{ASSETS_DIR}/actuator_net/anydrive_3_6_mlp_jit.pt"
 # (not Isaac Lab's default "pos_vel"). Scales match the hardcoded constants in
 # ActuationModel.cpp: positionScale_=5.0, velocityScale_=0.2, outputScale_=60.0.
 #
-# input_idx=[0, 1, 2] uses the 3 most recent physics-step samples. The original
-# C++ model sampled history at exact time lags of 0, 0.01s, 0.02s (historyInterval_=5
-# ring-buffer steps apart) - if your physics dt isn't 0.01s, this is an approximation.
+# input_idx=[0, 2, 4] samples every OTHER physics-step history slot. Confirmed via
+# print_body_names.py's env.reset() log (2026-10-19): this task's real inherited
+# sim.dt is 0.005s (not 0.01s as the old [0,1,2] assumed), so [0,1,2] was sampling at
+# 0/0.005s/0.01s - NOT the original C++ model's real history_interval of 0/0.01s/0.02s
+# (historyInterval_=5 ring-buffer steps apart, each a 0.005s physics step). [0,2,4]
+# samples every other slot (0, 0.01s, 0.02s), matching the real lags. Same fix as
+# CUBOS_JUANPA's own anymal_completo_cfg, which already uses [0,2,4] with this exact
+# dt - this file had been silently miscalibrated since the first training run.
 ANYDRIVE_3_6_MLP_ACTUATOR_CFG = ActuatorNetMLPCfg(
     joint_names_expr=[".*HAA", ".*HFE", ".*KFE"],
     network_file=ACTUATOR_NET_PATH,
@@ -41,7 +46,7 @@ ANYDRIVE_3_6_MLP_ACTUATOR_CFG = ActuatorNetMLPCfg(
     vel_scale=0.2,
     torque_scale=60.0,
     input_order="vel_pos",
-    input_idx=[0, 1, 2],
+    input_idx=[0, 2, 4],
     saturation_effort=120.0,
     effort_limit=80.0,
     velocity_limit=7.5,

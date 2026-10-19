@@ -156,6 +156,11 @@ lift-off) that now has no replacement. See Known gotchas.
   actuator) — restrict `actions.joint_pos.joint_names` to `.*HAA|.*HFE|.*KFE`.
 - `ActuatorNetMLPCfg.input_order` must be `"vel_pos"`, not Isaac Lab's default `"pos_vel"` —
   the original C++ actuation model concatenates velocity before position.
+- `ActuatorNetMLPCfg.input_idx` must be `[0, 2, 4]`, not `[0, 1, 2]` — the real inherited
+  `sim.dt` is 0.005s (confirmed via `scripts/Stability/print_body_names.py`'s startup log),
+  so 3 *consecutive* samples only reach back 0.01s, half of the real actuator's 0.02s training
+  history; every other sample (`[0,2,4]`) reaches the real 0/0.01/0.02s lags. Was wrong in
+  every Walk/Climb run before 2026-10-19 — see `scripts/Walk/daily_log.md`.
 - `setuptools>=81` breaks the Isaac Lab install (drops `pkg_resources`, which `flatdict`
   needs to build) — pin `setuptools<81` before `./isaaclab.sh --install`.
 - Isaac Sim 4.5 requires exactly Python 3.10 in the conda env.
@@ -170,16 +175,14 @@ lift-off) that now has no replacement. See Known gotchas.
   `CommandTerm` subclass needs its own `_set_debug_vis_impl`/`_debug_vis_callback` hooks
   (mirrored from `ObjectUniformPoseCommand`).
 
-**Stability specific (unresolved — see [scripts/Stability/daily_log.md](scripts/Stability/daily_log.md)):**
+**Stability specific (see [scripts/Stability/daily_log.md](scripts/Stability/daily_log.md)):**
 - No in-house URDF exists for ANYmal-D + DynaArm + Robotiq 2F-85 — the combined USD/actuator
   net are reused as-is from CUBOS_JUANPA rather than reconverted.
+- Real body names are confirmed (prefixed `dynaarm_` for the arm; gripper is `base_link` +
+  knuckle/finger bodies) — no `strings`-scan guessing needed in the end.
 - `enabled_self_collisions=True` on this robot (opposite of CUBOS_JUANPA's own combined-body
-  cfg) so an arm-leg collision can register a contact force at all — unverified whether this
-  causes a spawn explosion from convex-hull overlap at the neutral pose. Run
-  `print_body_names.py` before trusting any training run.
-- The arm/gripper's real body names aren't confirmed yet (a `strings` scan of the USD crate
-  file only gave mangled partial matches) — the arm-vs-leg contact sensors/reward aren't wired
-  in until `print_body_names.py` confirms them.
+  cfg) so an arm-leg collision can register a contact force at all — spawn-stability
+  verification is still in progress (see Status).
 
 ## Status
 
@@ -192,7 +195,10 @@ leans on riding the knee joint limit as part of the maneuver itself, not just a 
 posture. Not yet resolved. See [scripts/Climb/daily_log.md](scripts/Climb/daily_log.md) for the
 detailed, timestamped history behind every change above.
 
-**Stability** is brand new (stage 1 only): the robot swap, velocity tracking, and the
-arm-disturbance events are wired, but the arm-vs-leg collision sensors/reward are not yet —
-blocked on confirming real body names and spawn stability with self-collision on. Nothing has
-been run on the VM yet. See [scripts/Stability/daily_log.md](scripts/Stability/daily_log.md).
+**Stability**: stage 2 is wired (real body names confirmed, arm-vs-leg contact sensors +
+reward in place) and the actuator-net `input_idx` bug (wrong for every task, see Known
+gotchas) was caught and fixed here while verifying `sim.dt`. Still open: the first spawn check
+showed root velocity growing monotonically over 100ms, ambiguous between real self-collision
+overlap vs. the arm's own disturbance swinging hard right at reset — an extended 60-step check
+(with per-sensor contact force) is ready to run but hasn't been yet. No real training run yet.
+See [scripts/Stability/daily_log.md](scripts/Stability/daily_log.md).

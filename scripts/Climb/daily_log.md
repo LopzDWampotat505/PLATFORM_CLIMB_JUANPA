@@ -3,6 +3,14 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-19 16:12 -03 — inherited actuator-net fix from Walk
+No file in this folder changed, but Climb inherits `anymal_d_custom_no_payload.py`'s robot
+unchanged, and that file's `ActuatorNetMLPCfg.input_idx` was just fixed (`[0,1,2]` -> `[0,2,4]`
+- real `sim.dt` confirmed as 0.005s via `scripts/Stability/print_body_names.py`, see
+`scripts/Walk/daily_log.md` for the full explanation). Every Climb run so far trained against
+the slightly-miscalibrated actuator net; worth keeping in mind when comparing a future run
+against the CSV history logged below.
+
 ## 2026-10-19 13:13 -03 — reorganized into scripts/Climb/
 `platform_climb_mdp.py`, `platform_climb_task.py` moved from `scripts/` into `scripts/Climb/`
 (no content changes). Added this daily log per new project convention: every change from now

@@ -30,13 +30,10 @@ What changes vs. the Walk task (anymal_d_custom_task.py):
     feet_air_time, dof_pos_limits, undesired_contacts, base_contact termination, push/mass/
     friction randomization, PPO runner config) is inherited unchanged.
 
-STAGED IMPLEMENTATION - the arm-vs-leg contact sensors/reward (stability_mdp.
-arm_leg_contact_penalty) are NOT wired in yet. They need the DynaArm's real body names, which
-`strings`-scanning the USD only gave mangled partial matches for (see anymal_d_dynaarm.py and
-scripts/Stability/daily_log.md) - not trustworthy to hardcode. Run
-scripts/Stability/print_body_names.py on the VM first, then add the sensors/reward here (one
-dedicated ContactSensorCfg per confirmed arm body, filtered against the leg body prims, same
-pattern as platform_climb_task.py's shank/box sensors) and log that as its own dated entry.
+Real body names confirmed via print_body_names.py (2026-10-19): the DynaArm/gripper bodies
+are prefixed "dynaarm_" (SHOULDER, UPPERARM, ELBOW, FOREARM, WRIST_1, WRIST_2_base) plus the
+gripper's own "base_link" - see ARM_CONTACT_BODY_NAMES below for which ones get a dedicated
+collision sensor.
 
 Usage: same as the other tasks - import this module once before --task resolves. Add, right
 after the existing anymal_d_custom_task import:
@@ -47,12 +44,25 @@ after the existing anymal_d_custom_task import:
 import gymnasium as gym
 
 from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.sensors import ContactSensorCfg
 from isaaclab.utils import configclass
 
 import stability_mdp
 from anymal_d_custom_task import AGENT_CFG_ENTRY_POINT, AnymalDFlatCustomNoPayloadEnvCfg  # noqa: E402
 from anymal_d_dynaarm import ANYMAL_D_DYNAARM_CFG, ARM_JOINT_NAMES  # noqa: E402
+
+# Arm/gripper bodies most likely to swing into leg space - the end-effector chain, not the
+# shoulder/upper-arm segments closer to the body. One dedicated ContactSensorCfg per body
+# (see the loop below) - same filter_prim_paths_expr constraint as platform_climb_task.py's
+# shank/box sensors: filtered reporting only works when the sensor's own prim_path matches a
+# single primitive per environment.
+ARM_CONTACT_BODY_NAMES = ["dynaarm_FOREARM", "dynaarm_WRIST_1", "dynaarm_WRIST_2_base", "base_link"]
+LEG_CONTACT_BODY_NAMES = [
+    "LF_THIGH", "LH_THIGH", "RF_THIGH", "RH_THIGH",
+    "LF_SHANK", "LH_SHANK", "RF_SHANK", "RH_SHANK",
+]
 
 
 @configclass
@@ -87,9 +97,31 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
             params={"asset_cfg": arm_asset_cfg},
         )
 
-        # TODO(stage 2, blocked on confirmed body names - see module docstring): add one
-        # ContactSensorCfg per arm body (filtered against every leg body prim) and wire
-        # self.rewards.arm_leg_contact_penalty = RewTerm(func=stability_mdp.arm_leg_contact_penalty, ...)
+        # ---------------------------------------------------------------
+        # Arm-vs-leg collision: one dedicated contact sensor per arm/gripper body in
+        # ARM_CONTACT_BODY_NAMES, each filtered against every leg body prim - same
+        # single-primitive-per-sensor pattern platform_climb_task.py already uses for its
+        # shank/box sensors.
+        # ---------------------------------------------------------------
+        leg_prim_paths = [f"{{ENV_REGEX_NS}}/Robot/{name}" for name in LEG_CONTACT_BODY_NAMES]
+        for arm_body in ARM_CONTACT_BODY_NAMES:
+            setattr(
+                self.scene,
+                f"{arm_body.lower()}_leg_contact",
+                ContactSensorCfg(
+                    prim_path=f"{{ENV_REGEX_NS}}/Robot/{arm_body}",
+                    filter_prim_paths_expr=leg_prim_paths,
+                ),
+            )
+        self.rewards.arm_leg_contact_penalty = RewTerm(
+            func=stability_mdp.arm_leg_contact_penalty,
+            # Starting guess, not yet tuned against real data - same order of magnitude as
+            # the inherited undesired_contacts weight (-1.0).
+            weight=-1.0,
+            params={
+                "arm_sensor_names": [f"{name.lower()}_leg_contact" for name in ARM_CONTACT_BODY_NAMES],
+            },
+        )
 
 
 class AnymalDStabilityEnvCfg_PLAY(AnymalDStabilityEnvCfg):
