@@ -12,14 +12,16 @@ generic one). Two training rutines:
    perceptive/rough-terrain policy against the real robot's controller later on.
 
 ```
-scripts/anymal_d_custom.py              ArticulationCfg: custom USD + ANYdrive 3.6 actuator net (WITH inspection payload)
-scripts/anymal_d_custom_no_payload.py   same, WITHOUT the payload (~5.5 kg of asymmetric unactuated mass removed)
-scripts/anymal_d_custom_task.py         registers the 4 flat-terrain velocity tasks (base layer — never edited)
-scripts/platform_climb_task.py          registers the 2 platform-climb tasks, built on the base layer by inheritance only
-scripts/platform_climb_mdp.py           the command/reward/termination/curriculum code platform_climb_task.py wires in
-scripts/convert_actuator_net.py         one-off: ANYbotics' flat-text ANYdrive 3.6 net -> TorchScript .pt
-scripts/diagnose_spawn.py               manual debug script: exact post-reset numbers (height, joints, bodies)
-docs/decisions/0001-...md               ADR: why the goal success region must stay inside the platform footprint
+scripts/Walk/anymal_d_custom.py              ArticulationCfg: custom USD + ANYdrive 3.6 actuator net (WITH inspection payload)
+scripts/Walk/anymal_d_custom_no_payload.py   same, WITHOUT the payload (~5.5 kg of asymmetric unactuated mass removed)
+scripts/Walk/anymal_d_custom_task.py         registers the 4 flat-terrain velocity tasks (base layer — never edited)
+scripts/Walk/daily_log.md                    timestamped change log for this folder (every change gets an entry)
+scripts/Climb/platform_climb_task.py         registers the 2 platform-climb tasks, built on the base layer by inheritance only
+scripts/Climb/platform_climb_mdp.py          the command/reward/termination/curriculum code platform_climb_task.py wires in
+scripts/Climb/daily_log.md                   timestamped change log for this folder (every change gets an entry)
+scripts/convert_actuator_net.py              one-off: ANYbotics' flat-text ANYdrive 3.6 net -> TorchScript .pt
+scripts/diagnose_spawn.py                    manual debug script: exact post-reset numbers (height, joints, bodies)
+docs/decisions/0001-...md                    ADR: why the goal success region must stay inside the platform footprint
 ```
 
 ```bash
@@ -139,11 +141,11 @@ lift-off) that now has no replacement. See Known gotchas.
 
 ## Status
 
-Currently under investigation: the robot climbs up but drags its body across the platform
-instead of stepping cleanly. Leading hypothesis: `rewards.feet_air_time` — the term that, in
-the flat-walking task, pays out for lifting each foot before it touches down again — was
-dropped entirely rather than adapted when `platform_climb_task.py` was written (its
-`command_name="base_velocity"` parameter pointed at a command that no longer exists once the
-task switched to goal-reaching). Nothing currently penalizes a low-effort drag over a clean
-step. Next step: confirm the real `mdp.feet_air_time` signature in Isaac Lab's source and
-reimplement it without the velocity-command dependency.
+`feet_air_time` is reimplemented (no longer dropped) and `success_height_tol` was tightened to
+0.05 to make "standing on the platform" harder to fake by dragging. A short post-fix run (2000
+iterations) shows `base_contact` (falling) dropping and `foot_on_platform_bonus` rising faster
+than in any prior run — but `dof_pos_limits`/`undesired_contacts` start worsening in lockstep
+right as climbing attempts ramp up (~iteration 900), suggesting the emerging climb strategy
+leans on riding the knee joint limit as part of the maneuver itself, not just a lazy standing
+posture. Not yet resolved. See [scripts/Climb/daily_log.md](scripts/Climb/daily_log.md) for the
+detailed, timestamped history behind every change above.
