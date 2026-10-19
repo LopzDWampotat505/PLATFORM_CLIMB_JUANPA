@@ -15,8 +15,9 @@
      neutral pose - same failure mode diagnose_spawn.py was originally built to catch for the
      legs-only robot.
 
-Usage:
-    ./isaaclab.sh -p scripts/Stability/print_body_names.py --num_envs 1 --headless
+Usage (after copying anymal_d_dynaarm.py, stability_task.py, stability_mdp.py, and this file
+flat into ~/assets/ on the VM, same as every other script in this repo - see root README):
+    ./isaaclab.sh -p ~/assets/print_body_names.py --num_envs 1 --headless
 """
 
 import argparse

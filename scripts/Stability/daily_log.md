@@ -3,6 +3,12 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-19 16:06 -03 — fixed print_body_names.py's usage example
+Docstring said `./isaaclab.sh -p scripts/Stability/print_body_names.py ...` - wrong, that path
+doesn't exist inside `~/IsaacLab` (the user hit exactly this running it). Fixed to
+`~/assets/print_body_names.py`, matching the flat-deployment convention every other script in
+this repo already follows.
+
 ## 2026-10-19 15:21 -03 — task created (stage 1, no contact sensors yet)
 Third policy: train the LEGS to track a velocity command and stay upright while the DynaArm
 moves through random disturbance poses, and (once stage 2 lands) avoid the arm hitting the
