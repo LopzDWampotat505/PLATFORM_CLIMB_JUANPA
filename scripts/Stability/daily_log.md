@@ -3,6 +3,14 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-20 15:59 -03 — updated training_weights.md
+User added `training_weights.md` (the reward-term explainer table from earlier in this
+conversation) to this folder. Updated it to match current reality: `arm_leg_contact_penalty`
+-1.0 -> -2.0, `dof_pos_limits` 0.0 -> -2.0 (no longer "activate this to see"), corrected
+`dof_torques_l2` to the real source value (-1.0e-05, not the -2.5e-05 originally stated), and
+added a section on the velocity command range halving (not a reward weight, but the same
+"training exigence" category the rest of the doc covers).
+
 ## 2026-10-20 15:43 -03 — halved the velocity command range (permanent, not a curriculum)
 The continuation run (steps 4000-7998) showed `dof_torques_l2`/`dof_acc_l2`/`action_rate_l2`
 all getting steadily MORE negative (more effort/jerkiness), not less, even as `base_contact`
