@@ -139,6 +139,7 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
                 "arm_sensor_names": [f"{name.lower()}_leg_contact" for name in ARM_CONTACT_BODY_NAMES],
             },
         )
+        self.rewards.dof_pos_limits.weight = -2.0
 
 
 class AnymalDStabilityEnvCfg_PLAY(AnymalDStabilityEnvCfg):

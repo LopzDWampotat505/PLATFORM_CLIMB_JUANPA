@@ -3,6 +3,15 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-20 11:48 -03 — enabled dof_pos_limits (weight 0.0 -> -2.0)
+User added `self.rewards.dof_pos_limits.weight = -2.0` in `stability_task.py`, recycling
+`platform_climb_task.py`'s exact fix for the same underlying problem (joints riding their
+mechanical limits as a crutch instead of balancing properly) - no new func/params needed,
+`dof_pos_limits` was already inherited from `AnymalDFlatCustomNoPayloadEnvCfg`, just disabled
+at weight 0.0. Unlike Climb, this now watches ALL actuated joints (legs + arm + gripper), not
+just the 12 leg joints, since no `asset_cfg`/joint_names filter was added - worth watching
+whether the arm's own joints ever approach their limits too, not just the legs'.
+
 ## 2026-10-20 11:44 -03 — arm_leg_contact_penalty weight: -1.0 -> -2.0
 First 4000-iteration run with `range_scale=0.2` was a real breakthrough: `base_contact`
 (falling) stayed at ~100% through iteration ~2200 (same stuck pattern as the failed first
