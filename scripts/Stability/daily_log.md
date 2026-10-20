@@ -3,6 +3,9 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-20 18:22 -03 — translated training_weights.md to English
+Content unchanged, just language - same tables/values as the Spanish version.
+
 ## 2026-10-20 15:59 -03 — updated training_weights.md
 User added `training_weights.md` (the reward-term explainer table from earlier in this
 conversation) to this folder. Updated it to match current reality: `arm_leg_contact_penalty`
