@@ -56,7 +56,7 @@ def randomize_arm_pose(
 def arm_leg_contact_penalty(
     env: ManagerBasedRLEnv,
     arm_sensor_names: list[str],
-    force_threshold: float = 1.0,
+    force_threshold: float = 2.0,
 ) -> torch.Tensor:
     """Penalize contact force between any dedicated arm/gripper ContactSensor (each filtered
     against every leg body prim - see stability_task.py) and the legs.
