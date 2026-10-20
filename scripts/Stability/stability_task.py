@@ -128,9 +128,13 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
             )
         self.rewards.arm_leg_contact_penalty = RewTerm(
             func=stability_mdp.arm_leg_contact_penalty,
-            # Starting guess, not yet tuned against real data - same order of magnitude as
-            # the inherited undesired_contacts weight (-1.0).
-            weight=-1.0,
+            # -1.0 -> -2.0 (2026-10-20): the first run with the softer range_scale=0.2
+            # disturbance never registered a single arm-leg contact in 4000 iterations
+            # (stayed at flat 0.0 the whole run) - gentler arm motion plus a stable gait now
+            # just doesn't reach the legs often, if at all. Doubling the weight now, before
+            # the arm's disturbance range gets opened back up later, so the penalty is
+            # already meaningfully in place if/when contact starts happening again.
+            weight=-2.0,
             params={
                 "arm_sensor_names": [f"{name.lower()}_leg_contact" for name in ARM_CONTACT_BODY_NAMES],
             },

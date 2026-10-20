@@ -3,6 +3,20 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-20 11:44 -03 — arm_leg_contact_penalty weight: -1.0 -> -2.0
+First 4000-iteration run with `range_scale=0.2` was a real breakthrough: `base_contact`
+(falling) stayed at ~100% through iteration ~2200 (same stuck pattern as the failed first
+run), then broke free - by iteration 3800, `base_contact` down to 81.7%, `time_out` up to
+18.3%, mean episode length up from a flat ~6s to 369.5 (max 503), `Train_mean_reward` crossed
+into positive territory (+3.37) and still climbing with no sign of plateauing. Confirmed
+visually in the recorded video - robot stayed upright, arm raised, for 20+ second stretches.
+
+One side effect: `arm_leg_contact_penalty` stayed at flat 0.0 the ENTIRE 4000-iteration run -
+not a single registered contact (unlike the previous run's occasional tiny blips). With the
+gentler arm motion and a more stable gait, contact is apparently rare-to-nonexistent now.
+Doubled the weight to -2.0 anyway, before the arm's range gets opened back up later, so the
+penalty already has real teeth whenever contact does start happening again.
+
 ## 2026-10-19 18:05 -03 — randomize_arm_pose's range_scale default: 1.0 -> 0.2
 First full 2000-iteration training run came back with `Episode_Termination/base_contact`
 pinned at ~100% (and `time_out` at 0%) for essentially the entire run, `Train_mean_episode_length`
