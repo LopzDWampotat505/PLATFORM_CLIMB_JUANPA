@@ -3,6 +3,21 @@
 Every change to this folder's scripts gets an entry here, with a timestamp, in the same commit
 as the change. Most recent first.
 
+## 2026-10-20 15:43 -03 — halved the velocity command range (permanent, not a curriculum)
+The continuation run (steps 4000-7998) showed `dof_torques_l2`/`dof_acc_l2`/`action_rate_l2`
+all getting steadily MORE negative (more effort/jerkiness), not less, even as `base_contact`
+dropped and reward climbed - the policy is getting faster/better at tracking velocity by
+pushing harder, not by moving smoother. Root cause: this task inherits the base Walk
+command's full range (`lin_vel_x`/`lin_vel_y`/`ang_vel_z` = (-1.0, 1.0)), which demands more
+effort than this task's actual goal (a smooth, stable platform for the arm, not fast
+locomotion) needs.
+
+Halved all 3 ranges to (-0.5, 0.5) in `stability_task.py`. Explicitly NOT a curriculum step
+toward the full range later - this is a permanent capability ceiling for this task, matching
+what it's actually for. A future task needing fast/dynamic movement-while-reaching (discussed:
+"robot plays tennis") would be its own separate task with its own wider range, built by
+inheritance like Walk/Climb/Stability already are - not this task widened back out.
+
 ## 2026-10-20 11:48 -03 — enabled dof_pos_limits (weight 0.0 -> -2.0)
 User added `self.rewards.dof_pos_limits.weight = -2.0` in `stability_task.py`, recycling
 `platform_climb_task.py`'s exact fix for the same underlying problem (joints riding their

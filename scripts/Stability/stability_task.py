@@ -89,6 +89,10 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
         # Robot: legs + DynaArm + Robotiq 2F-85 instead of legs-only.
         # ---------------------------------------------------------------
         self.scene.robot = ANYMAL_D_DYNAARM_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
 
         # ---------------------------------------------------------------
         # Events: the arm's "operation" - random joint-position targets, held by its own PD
@@ -96,6 +100,8 @@ class AnymalDStabilityEnvCfg(AnymalDFlatCustomNoPayloadEnvCfg):
         # function: a fresh pose at episode start, then reshuffled periodically during the
         # episode so the arm keeps moving - interval_range_s matches the inherited
         # events.push_robot's own cadence style (random interval, not fixed).
+        # Additional diminishing of original volatility in possible velocity, reducing the
+        # stress of the task to the robot.
         # ---------------------------------------------------------------
         arm_asset_cfg = SceneEntityCfg("robot", joint_names=ARM_JOINT_NAMES)
         self.events.arm_pose_reset = EventTerm(
